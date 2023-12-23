@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 use std::{fs::OpenOptions, io::Write};
 
 pub mod d1;
+pub mod d2;
 
 fn main() {
     let args: Vec<_> = env::args().collect();
@@ -28,6 +29,12 @@ fn main() {
         1 => {
             let p1 = d1::part1(format!("data/d{day}/input.txt"));
             let p2 = d1::part2(format!("data/d{day}/input.txt"));
+            result_str = format!("Day {}\nPart 1: {}\nPart 2: {}\n", day, p1, p2);
+        }
+        2 => {
+            let p1 = d2::part1(format!("data/d{day}/input.txt"));
+            let p2 = 0u32;
+            // let p2 = d2::part2(format!("data/d{day}/input.txt"));
             result_str = format!("Day {}\nPart 1: {}\nPart 2: {}\n", day, p1, p2);
         }
         _ => return,
