@@ -25,19 +25,21 @@ fn main() {
     };
 
     let result_str: String;
+    let input_file = format!("data/d{day}/input.txt");
     match day {
         1 => {
-            let p1 = d1::part1(format!("data/d{day}/input.txt"));
-            let p2 = d1::part2(format!("data/d{day}/input.txt"));
+            let p1 = d1::part1(input_file.clone());
+            let p2 = d1::part2(input_file);
             result_str = format!("Day {}\nPart 1: {}\nPart 2: {}\n", day, p1, p2);
         }
         2 => {
-            let p1 = d2::part1(format!("data/d{day}/input.txt"));
-            let p2 = 0u32;
-            // let p2 = d2::part2(format!("data/d{day}/input.txt"));
+            let (p1, p2) = d2::both_parts(input_file);
             result_str = format!("Day {}\nPart 1: {}\nPart 2: {}\n", day, p1, p2);
         }
-        _ => return,
+        _ => {
+            println!("Invalid number {day}. Aborting...");
+            return;
+        }
     }
     let mut output_path = env::current_dir().unwrap();
 

@@ -12,6 +12,7 @@ pub struct Game {
     sets: Vec<Set>,
     number: u32,
     total: Set,
+    max: Set,
 }
 
 impl Game {
@@ -20,6 +21,7 @@ impl Game {
             sets: Vec::<Set>::new(),
             number: number,
             total: Set::new(),
+            max: Set::new(),
         }
     }
 
@@ -28,6 +30,10 @@ impl Game {
     }
     pub fn get_total(&self) -> Set {
         self.total
+    }
+
+    pub fn get_power(&self) -> u32 {
+        self.max.red * self.max.green * self.max.blue
     }
 
     pub fn parse(game_str: &str) -> Option<Self> {
@@ -41,6 +47,7 @@ impl Game {
 
     pub fn add_set(&mut self, set: Set) {
         self.total.insert(set);
+        self.max.swap_max(set);
         self.sets.push(set);
     }
 
@@ -55,14 +62,11 @@ impl Game {
 
     pub fn to_string(&self) -> String {
         String::from(format!(
-            "Game number: {:?}\n Total: {}",
+            "Game number: {:?}\n Total: {}\n   Max: {}",
             self.number,
-            self.total.to_string()
+            self.total.to_string(),
+            self.max.to_string()
         ))
-        // self.total.print();
-        // for set in &self.sets {
-        //     set.print();
-        // }
     }
 }
 
@@ -106,22 +110,25 @@ impl Set {
         }
     }
 
+    pub fn swap_max(&mut self, other: Set) {
+        if self.red == 0 || self.red < other.red {
+            self.red = other.red;
+        }
+        if self.green == 0 || self.green < other.green {
+            self.green = other.green;
+        }
+        if self.blue == 0 || self.blue < other.blue {
+            self.blue = other.blue;
+        }
+    }
+
     pub fn insert(&mut self, other: Set) {
         self.red += other.red;
         self.green += other.green;
         self.blue += other.blue;
     }
-    pub fn withdraw(&mut self, other: Set) {
-        self.red -= other.red;
-        self.green -= other.green;
-        self.blue -= other.blue;
-    }
     pub fn is_contained(&self, limit: Set) -> bool {
         self.red <= limit.red && self.green <= limit.green && self.blue <= limit.blue
-    }
-
-    pub fn can_withdraw(&self, other: Set) -> bool {
-        !(self.red < other.red || self.green < other.green || self.blue < other.blue)
     }
     pub fn to_string(&self) -> String {
         String::from(format!(
@@ -131,7 +138,7 @@ impl Set {
     }
 }
 
-pub fn part1(file_path: String) -> u32 {
+pub fn both_parts(file_path: String) -> (u32, u32) {
     let mut path = std::env::current_dir().unwrap();
     path.push(PathBuf::from(file_path));
 
@@ -145,13 +152,15 @@ pub fn part1(file_path: String) -> u32 {
                 games.push(game)
             }
         });
-    let mut result = 0u32;
+    let mut part1 = 0u32;
+    let mut part2 = 0u32;
     games.into_iter().for_each(|game| {
         if game.all_sets_contained(BAG) {
-            result += game.get_number();
+            part1 += game.get_number();
         }
+        part2 += game.get_power();
     });
-    return result;
+    return (part1, part2);
 }
 
 #[cfg(test)]
@@ -159,7 +168,13 @@ mod test_d1 {
 
     #[test]
     pub fn test_d2_p1() {
-        let a = super::part1(String::from("data/d2/test_p1.txt"));
+        let (a, _) = super::both_parts(String::from("data/d2/test_p1.txt"));
         assert_eq!(a, 8);
+    }
+
+    #[test]
+    pub fn test_d2_p2() {
+        let (_, a) = super::both_parts(String::from("data/d2/test_p2.txt"));
+        assert_eq!(a, 2286);
     }
 }
