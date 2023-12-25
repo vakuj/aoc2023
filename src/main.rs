@@ -38,8 +38,8 @@ fn main() {
             result_str = format!("Day {}\nPart 1: {}\nPart 2: {}\n", day, p1, p2);
         }
         3 => {
-            let p1 = d3::part1(input_file);
-            let p2 = 0u32;
+            let p1 = d3::part1(input_file.clone());
+            let p2 = d3::part2(input_file);
             result_str = format!("Day {}\nPart 1: {}\nPart 2: {}\n", day, p1, p2);
         }
         _ => {
