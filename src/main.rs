@@ -7,6 +7,7 @@ use std::{fs::OpenOptions, io::Write};
 
 pub mod d1;
 pub mod d2;
+pub mod d3;
 
 fn main() {
     let args: Vec<_> = env::args().collect();
@@ -34,6 +35,11 @@ fn main() {
         }
         2 => {
             let (p1, p2) = d2::both_parts(input_file);
+            result_str = format!("Day {}\nPart 1: {}\nPart 2: {}\n", day, p1, p2);
+        }
+        3 => {
+            let p1 = d3::part1(input_file);
+            let p2 = 0u32;
             result_str = format!("Day {}\nPart 1: {}\nPart 2: {}\n", day, p1, p2);
         }
         _ => {
