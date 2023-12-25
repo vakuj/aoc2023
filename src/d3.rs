@@ -217,4 +217,10 @@ mod test_d3 {
         println!("{a}");
         assert_eq!(a, 550934);
     }
+    #[test]
+    pub fn test_d3_p2real() {
+        let a = super::part2(String::from("data/d3/input.txt"));
+        println!("{a}");
+        assert_eq!(a, 81997870);
+    }
 }
