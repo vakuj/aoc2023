@@ -8,6 +8,7 @@ use std::{fs::OpenOptions, io::Write};
 pub mod d1;
 pub mod d2;
 pub mod d3;
+pub mod d4;
 
 fn main() {
     let args: Vec<_> = env::args().collect();
@@ -42,6 +43,12 @@ fn main() {
             let p2 = d3::part2(input_file);
             result_str = format!("Day {}\nPart 1: {}\nPart 2: {}\n", day, p1, p2);
         }
+        4 => {
+            let p1 = d4::part1(input_file.clone());
+            let p2 = d4::part2(input_file);
+            result_str = format!("Day {}\nPart 1: {}\nPart 2: {}\n", day, p1, p2);
+        }
+
         _ => {
             println!("Invalid number {day}. Aborting...");
             return;

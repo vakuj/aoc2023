@@ -36,6 +36,7 @@ impl PartNumber {
     }
 }
 
+#[allow(unused_assignments)]
 pub fn part1(file_path: String) -> u32 {
     let mut path = std::env::current_dir().unwrap();
     path.push(PathBuf::from(file_path));
@@ -113,6 +114,7 @@ pub fn part1(file_path: String) -> u32 {
     return sum;
 }
 
+#[allow(unused_assignments)]
 pub fn part2(file_path: String) -> u32 {
     let mut path = std::env::current_dir().unwrap();
     path.push(PathBuf::from(file_path));
