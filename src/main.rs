@@ -54,7 +54,6 @@ fn main() {
             let p2 = d5::part2(input_file);
             result_str = format!("Day {}\nPart 1: {}\nPart 2: {}\n", day, p1, p2);
         }
-
         _ => {
             println!("Invalid number {day}. Aborting...");
             return;
