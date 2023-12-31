@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::io::Error;
 use std::path::PathBuf;
+
 /// the map type used key pairs to map items
 type Map = HashMap<(MapType, MapType), Vec<MapItem>>;
 #[derive(Debug)]
@@ -68,24 +69,20 @@ impl MapItem {
         }
         None
     }
+
     pub fn get_dst_range(&self, src: &ItemRange) -> Option<ItemRange> {
-        // src: (46..56) ,self.src:
-
-        if self.src + self.len < src.0 || src.1 <= self.src {
-            return None;
+        match (self.get_dst(src.0), self.get_dst(src.1 - 1)) {
+            (None, None) => None,
+            (None, Some(end)) => Some(ItemRange {
+                0: self.dst,
+                1: end,
+            }),
+            (Some(start), None) => Some(ItemRange {
+                0: start,
+                1: self.dst + self.len,
+            }),
+            (Some(start), Some(end)) => Some(ItemRange { 0: start, 1: end }),
         }
-        let offset = if self.src > src.0 {
-            0
-        } else {
-            src.0 - self.src
-        };
-        let length = src.1 - src.0 - 1;
-        let length = if self.len < length { self.len } else { length };
-
-        return Some(ItemRange {
-            0: self.dst + offset,
-            1: self.dst + offset + length,
-        });
     }
 }
 impl MapType {
@@ -220,6 +217,40 @@ pub fn part1(file_path: String) -> usize {
     return best_location.unwrap();
 }
 
+fn part2_rec(key_offset: usize, next_src: ItemRange) -> Option<ItemRange> {
+    if key_offset >= unsafe { KEY_ORDER.len() } {
+        return Some(next_src);
+    }
+    let key = unsafe { KEY_ORDER[key_offset] };
+    let mut best_range: Option<ItemRange> = None;
+    if unsafe { !MAPPING.contains_key(&key) } {
+        println!("==== KEY NOT FOUND: {key:?} ====");
+        return None;
+    }
+    let mut next_srcs = Vec::<ItemRange>::new();
+    unsafe { MAPPING.get(&key).unwrap() }
+        .into_iter()
+        .for_each(|item| match item.get_dst_range(&next_src) {
+            Some(ns) => next_srcs.push(ns),
+            _ => (),
+        });
+    if next_srcs.len() == 0 {
+        next_srcs.push(next_src);
+    }
+    next_srcs.into_iter().for_each(|ns| {
+        if let Some(curr) = part2_rec(key_offset + 1, ns) {
+            if let Some(br) = best_range {
+                if curr.0 <= br.0 {
+                    best_range = Some(curr);
+                }
+            } else {
+                best_range = Some(curr);
+            }
+        }
+    });
+    best_range.or(Some(next_src))
+}
+
 pub fn part2(file_path: String) -> usize {
     if unsafe { !DATA_LOADED } {
         load_data(file_path.clone()).expect("Could not load data");
@@ -227,33 +258,17 @@ pub fn part2(file_path: String) -> usize {
     reload_seeds(file_path).expect("Could not reload seeds");
 
     let mut best_location: Option<usize> = None;
-    let mut next_src: ItemRange;
     for seed in unsafe { &SEEDS_P2 } {
-        next_src = *seed;
-        for key in unsafe { &KEY_ORDER } {
-            // panic if key not found, should be there...
-            if unsafe { !MAPPING.contains_key(&key) } {
-                panic!("key not found");
-            }
-
-            for item in unsafe { MAPPING.get(&key).unwrap() } {
-                if let Some(ns) = item.get_dst_range(&next_src) {
-                    // println!("{key:?} : {next_src:?} -> {ns:?}");
-                    next_src = ns;
-                    break;
+        let range = part2_rec(0, *seed);
+        if let Some(best_range) = range {
+            if let Some(bl) = best_location {
+                if bl > best_range.0 {
+                    best_location = Some(best_range.0);
                 }
+            } else {
+                best_location = Some(best_range.0);
             }
-            println!("{key:?} : {next_src:?}");
         }
-
-        if let Some(bl) = best_location {
-            if bl > next_src.0 {
-                best_location = Some(next_src.0);
-            }
-        } else {
-            best_location = Some(next_src.0);
-        }
-        println!("---- {best_location:?} [{seed:?})");
     }
     return best_location.unwrap();
 }
@@ -264,8 +279,22 @@ mod test_d5 {
         load_data, reload_seeds, MapType, DATA_LOADED, KEY_ORDER, MAPPING, SEEDS_P1, SEEDS_P2,
     };
 
+    fn reset_loaded() {
+        unsafe {
+            if DATA_LOADED {
+                // clear data if loaded in previous tests
+                DATA_LOADED = false;
+                KEY_ORDER.clear();
+                MAPPING.clear();
+                SEEDS_P1.clear();
+                SEEDS_P2.clear();
+            }
+        }
+    }
+
     #[test]
     pub fn test_d5_load() {
+        reset_loaded();
         let result = load_data(String::from("data/d5/test_p1.txt"));
         assert!(result.is_ok());
 
@@ -289,28 +318,29 @@ mod test_d5 {
 
     #[test]
     pub fn test_d5_p1() {
+        reset_loaded();
         let a = super::part1(String::from("data/d5/test_p1.txt"));
         assert_eq!(a, 35);
     }
     #[test]
+    pub fn test_d5_p1real() {
+        reset_loaded();
+        let a = super::part1(String::from("data/d5/input.txt"));
+        assert_eq!(a, 323142486);
+    }
+
+    #[test]
     pub fn test_d5_p2() {
+        reset_loaded();
         let a = super::part2(String::from("data/d5/test_p1.txt"));
         assert_eq!(a, 46);
         //  too high on real input
     }
     #[test]
     pub fn test_d5_p2real() {
-        unsafe {
-            if DATA_LOADED {
-                // clear data if loaded in previous tests
-                DATA_LOADED = false;
-                KEY_ORDER.clear();
-                MAPPING.clear();
-                SEEDS_P1.clear();
-                SEEDS_P2.clear();
-            }
-        }
+        reset_loaded();
         let a = super::part2(String::from("data/d5/input.txt"));
-        assert!(a < 283658805);
+        assert!(26261744 < a && a < 283658805);
+        assert_eq!(a, 79874951);
     }
 }
