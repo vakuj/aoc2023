@@ -10,6 +10,7 @@ pub mod d2;
 pub mod d3;
 pub mod d4;
 pub mod d5;
+pub mod d6;
 
 fn main() {
     let args: Vec<_> = env::args().collect();
@@ -52,6 +53,11 @@ fn main() {
         5 => {
             let p1 = d5::part1(input_file.clone());
             let p2 = d5::part2(input_file);
+            result_str = format!("Day {}\nPart 1: {}\nPart 2: {}\n", day, p1, p2);
+        }
+        6 => {
+            let p1 = d6::part1(input_file.clone());
+            let p2 = d6::part2(input_file);
             result_str = format!("Day {}\nPart 1: {}\nPart 2: {}\n", day, p1, p2);
         }
         _ => {
