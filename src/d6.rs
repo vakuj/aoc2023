@@ -60,6 +60,11 @@ fn load_data_p2(file_path: String) -> Result<(u32, u32), String> {
         {
             time = y;
         }
+    } else {
+        return Err(format!(
+            "Could not read time string, see source: {}",
+            lines[0]
+        ));
     }
     if let Some((_, x)) = lines[1].trim().split_once(':') {
         if let Ok(y) = x
@@ -71,6 +76,11 @@ fn load_data_p2(file_path: String) -> Result<(u32, u32), String> {
         {
             dist = y;
         }
+    } else {
+        return Err(format!(
+            "Could not read distance string, see source: {}",
+            lines[1]
+        ));
     }
     Ok((time, dist))
 }
@@ -89,15 +99,12 @@ pub fn part1(file_path: String) -> u32 {
     let mut result = 1u32;
 
     zip(times, dists).for_each(|(time, dist)| {
-        println!("{time} - {dist}");
         let mut ctr = 0u32;
         let _ = (0..time)
             .scan(0, |vel, t| {
-                // println!("{t} = {vel}");
                 let d = (time - t) * *vel;
                 if d > dist {
                     ctr += 1;
-                    println!("{d} = {vel}");
                 }
                 *vel = *vel + 1;
                 Some(*vel)
@@ -106,12 +113,34 @@ pub fn part1(file_path: String) -> u32 {
         result *= ctr;
     });
 
-    println!("{result}");
+    println!("part 1: {result}");
     result
 }
 
 pub fn part2(file_path: String) -> u32 {
-    0
+    let time: usize;
+    let dist: usize;
+    match load_data_p2(file_path) {
+        Ok(data) => {
+            time = data.0 as usize;
+            dist = data.1 as usize;
+        }
+        Err(str) => panic!("{str}"),
+    }
+
+    println!("time, dist = {time}, {dist}");
+    let mut result = 0u32;
+    let _ = (0..time)
+        .scan(0usize, |vel, t| -> Option<usize> {
+            if (time - t) * *vel > dist {
+                result += 1;
+            }
+            *vel = *vel + 1;
+            Some(*vel)
+        })
+        .collect::<Vec<usize>>();
+
+    result
 }
 
 #[cfg(test)]
@@ -159,9 +188,19 @@ mod test_d6 {
         assert_eq!(a, 288);
     }
     #[test]
-    #[ignore = "reason"]
+    pub fn test_d6_p2() {
+        let a = super::part2(String::from("data/d6/test_p1.txt"));
+        assert_eq!(a, 71503);
+    }
+    #[test]
+    // #[ignore = "reason"]
     pub fn test_d6_p1real() {
         let a = super::part1(String::from("data/d6/input.txt"));
         assert_eq!(a, 227850);
+    }
+    #[test]
+    pub fn test_d6_p2real() {
+        let a = super::part2(String::from("data/d6/input.txt"));
+        assert_eq!(a, 0);
     }
 }
