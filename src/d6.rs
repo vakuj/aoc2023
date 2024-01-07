@@ -1,6 +1,6 @@
+use std::fs;
 use std::iter::zip;
 use std::path::PathBuf;
-use std::{fs, result};
 
 pub fn load_data(file_path: String) -> Result<(Vec<u32>, Vec<u32>), String> {
     let mut path = std::env::current_dir().unwrap();
@@ -40,7 +40,7 @@ pub fn load_data(file_path: String) -> Result<(Vec<u32>, Vec<u32>), String> {
     Ok((time, dist))
 }
 
-fn load_data_p2(file_path: String) -> Result<(u32, u32), String> {
+fn load_data_p2(file_path: String) -> Result<(u128, u128), String> {
     let mut path = std::env::current_dir().unwrap();
     path.push(PathBuf::from(file_path));
     let binding = fs::read_to_string(path).expect("Should load file");
@@ -48,15 +48,15 @@ fn load_data_p2(file_path: String) -> Result<(u32, u32), String> {
     if lines.len() != 2 {
         return Err(format!("Expected to read 2 lines got {}", lines.len()));
     }
-    let mut time = 0u32;
-    let mut dist = 0u32;
+    let mut time = 0u128;
+    let mut dist = 0u128;
     if let Some((_, x)) = lines[0].trim().split_once(':') {
         if let Ok(y) = x
             .trim()
             .split(' ')
             .flat_map(|s| s.chars())
             .collect::<String>()
-            .parse()
+            .parse::<u128>()
         {
             time = y;
         }
@@ -72,7 +72,7 @@ fn load_data_p2(file_path: String) -> Result<(u32, u32), String> {
             .split(' ')
             .flat_map(|s| s.chars())
             .collect::<String>()
-            .parse()
+            .parse::<u128>()
         {
             dist = y;
         }
@@ -113,32 +113,30 @@ pub fn part1(file_path: String) -> u32 {
         result *= ctr;
     });
 
-    println!("part 1: {result}");
     result
 }
 
-pub fn part2(file_path: String) -> u32 {
-    let time: usize;
-    let dist: usize;
+pub fn part2(file_path: String) -> usize {
+    let time: u128;
+    let dist: u128;
     match load_data_p2(file_path) {
         Ok(data) => {
-            time = data.0 as usize;
-            dist = data.1 as usize;
+            time = data.0;
+            dist = data.1;
         }
         Err(str) => panic!("{str}"),
     }
 
-    println!("time, dist = {time}, {dist}");
-    let mut result = 0u32;
+    let mut result = 0usize;
     let _ = (0..time)
-        .scan(0usize, |vel, t| -> Option<usize> {
+        .scan(0u128, |vel, t| -> Option<u128> {
             if (time - t) * *vel > dist {
                 result += 1;
             }
             *vel = *vel + 1;
             Some(*vel)
         })
-        .collect::<Vec<usize>>();
+        .collect::<Vec<u128>>();
 
     result
 }
@@ -169,8 +167,8 @@ mod test_d6 {
     }
     #[test]
     pub fn load_test_d6_p2() {
-        let time: u32;
-        let dist: u32;
+        let time: u128;
+        let dist: u128;
         match load_data_p2(String::from("data/d6/test_p1.txt")) {
             Ok(data) => {
                 time = data.0;
@@ -201,6 +199,6 @@ mod test_d6 {
     #[test]
     pub fn test_d6_p2real() {
         let a = super::part2(String::from("data/d6/input.txt"));
-        assert_eq!(a, 0);
+        assert_eq!(a, 42948149);
     }
 }
