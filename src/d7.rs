@@ -280,6 +280,6 @@ mod test_d7 {
     pub fn test_d7_p2real() {
         let a = super::part2(String::from("data/d7/input.txt"));
         assert_ne!(a, u32::MAX);
-        assert_eq!(a, 0);
+        assert_eq!(a, 253362743);
     }
 }
