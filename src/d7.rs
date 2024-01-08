@@ -21,6 +21,45 @@ pub enum Rank {
     FourOfKind = 6,
     FiveOfKind = 7,
 }
+impl Rank {
+    pub fn try_upgrade(&mut self, jokers: u32) {
+        if jokers == 0 {
+            return;
+        }
+
+        match self {
+            Rank::Undefined => return,
+            Rank::HighCard => {
+                if jokers == 1 {
+                    *self = Rank::OnePair
+                }
+            }
+            Rank::OnePair => match jokers {
+                1 | 2 => *self = Rank::ThreeOfKind,
+                _ => return,
+            },
+            Rank::TwoPair => match jokers {
+                1 => *self = Rank::FullHouse,
+                2 => *self = Rank::FourOfKind,
+                _ => return,
+            },
+            Rank::ThreeOfKind => match jokers {
+                1 => *self = Rank::FourOfKind,
+                3 => *self = Rank::FourOfKind,
+                _ => return,
+            },
+            Rank::FullHouse => match jokers {
+                2 | 3 => *self = Rank::FiveOfKind,
+                _ => return,
+            },
+            Rank::FourOfKind => match jokers {
+                1 | 4 => *self = Rank::FiveOfKind,
+                _ => return,
+            },
+            Rank::FiveOfKind => return,
+        }
+    }
+}
 impl Hand {
     pub fn new() -> Self {
         Hand {
@@ -30,16 +69,24 @@ impl Hand {
         }
     }
 
-    pub fn from_string(line: &str) -> Option<Self> {
+    pub fn from_string(line: &str, use_jokers: bool) -> Option<Self> {
         if let Some((a, b)) = line.trim().split_once(' ') {
             let mut hand = Hand::new();
             let mut uhand = Vec::<(u32, u32)>::new();
+            let mut jokers = 0u32;
             a.chars().for_each(|c| {
                 let value: u32 = match c {
                     'A' => 14,
                     'K' => 13,
                     'Q' => 12,
-                    'J' => 11,
+                    'J' => {
+                        if use_jokers {
+                            jokers += 1;
+                            1
+                        } else {
+                            11
+                        }
+                    }
                     'T' => 10,
                     '9' => 9,
                     '8' => 8,
@@ -51,8 +98,8 @@ impl Hand {
                     '2' => 2,
                     _ => panic!("Could not parse {c} as a card"),
                 };
-
                 hand.cards.push(value);
+
                 let mut inserted = false;
                 for ii in 0..uhand.len() {
                     if uhand[ii].0 == value {
@@ -95,6 +142,7 @@ impl Hand {
                     hand.rank = Rank::Undefined;
                 }
             }
+            hand.rank.try_upgrade(jokers);
             match b.parse() {
                 Ok(bid) => hand.bid = bid,
                 Err(err) => panic!("Could not parse {b} as bid: {err}"),
@@ -124,14 +172,14 @@ impl Hand {
     }
 }
 
-pub fn load_data(file_path: String) -> Result<Vec<Hand>, String> {
+pub fn load_data(file_path: String, with_jokers: bool) -> Result<Vec<Hand>, String> {
     let mut path = std::env::current_dir().unwrap();
     path.push(PathBuf::from(file_path));
     let binding = fs::read_to_string(path).expect("Should load");
     let lines = binding.lines().collect::<Vec<&str>>();
     let mut hands = Vec::<Hand>::new();
     lines.into_iter().for_each(|line| {
-        if let Some(hand) = Hand::from_string(line) {
+        if let Some(hand) = Hand::from_string(line, with_jokers) {
             hands.push(hand)
         }
     });
@@ -140,7 +188,7 @@ pub fn load_data(file_path: String) -> Result<Vec<Hand>, String> {
 }
 
 pub fn part1(file_path: String) -> u32 {
-    match load_data(file_path) {
+    match load_data(file_path, false) {
         Ok(mut hands) => {
             hands.sort_by(|a, b| a.cmp(b));
             return hands
@@ -152,8 +200,17 @@ pub fn part1(file_path: String) -> u32 {
     }
 }
 
-pub fn part2(file_path: String) -> usize {
-    0
+pub fn part2(file_path: String) -> u32 {
+    match load_data(file_path, true) {
+        Ok(mut hands) => {
+            hands.sort_by(|a, b| a.cmp(b));
+            return hands
+                .iter()
+                .enumerate()
+                .fold(0u32, |acc, (ii, hand)| acc + hand.bid * (ii as u32 + 1));
+        }
+        Err(str) => panic!("{str}"),
+    }
 }
 
 #[cfg(test)]
@@ -162,7 +219,7 @@ mod test_d7 {
 
     #[test]
     pub fn load_test_d7_p1() {
-        match load_data(String::from("data/d7/test_p1.txt")) {
+        match load_data(String::from("data/d7/test_p1.txt"), false) {
             Ok(data) => {
                 assert_eq!(data[0].bid, 765);
                 assert_eq!(data[1].bid, 684);
@@ -190,6 +247,19 @@ mod test_d7 {
             Err(str) => panic!("{str}"),
         }
     }
+    #[test]
+    pub fn load_test_d7_p2() {
+        match load_data(String::from("data/d7/test_p1.txt"), true) {
+            Ok(data) => {
+                assert_eq!(data[0].rank, Rank::OnePair);
+                assert_eq!(data[1].rank, Rank::FourOfKind);
+                assert_eq!(data[2].rank, Rank::TwoPair);
+                assert_eq!(data[3].rank, Rank::FourOfKind);
+                assert_eq!(data[4].rank, Rank::FourOfKind);
+            }
+            Err(str) => panic!("{str}"),
+        }
+    }
 
     #[test]
     pub fn test_d7_p1() {
@@ -199,6 +269,17 @@ mod test_d7 {
     #[test]
     pub fn test_d7_p1real() {
         let a = super::part1(String::from("data/d7/input.txt"));
+        assert_eq!(a, 253313241);
+    }
+    #[test]
+    pub fn test_d7_p2() {
+        let a = super::part2(String::from("data/d7/test_p1.txt"));
+        assert_eq!(a, 5905);
+    }
+    #[test]
+    pub fn test_d7_p2real() {
+        let a = super::part2(String::from("data/d7/input.txt"));
+        assert_ne!(a, u32::MAX);
         assert_eq!(a, 0);
     }
 }
